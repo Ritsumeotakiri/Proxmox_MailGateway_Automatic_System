@@ -47,12 +47,18 @@ The solution offers:
 | Backend API    | Node.js + Express          |
 | Frontend UI    | React                      |
 | Charts         | Chart.js                   |
-| Bot Integration| Telegram Bot API           |
+| Bot Integration| Telegram Bot API Grammy    |
 | Scheduling     | node-cron                  |
 | Testing        | Thunder Client             |
 | Auth & Security| JWT, .env config           |
 
 ---
 
-## 📂 Project Structure
+---
+
+## ⚙️ Setup Instructions
+
+### 1. Clone the Repo
+```bash
+git clone https://github.com/Ritsumeotakiri/Proxmox_MailGateway_Automatic_System.git
 
