@@ -1,0 +1,29 @@
+.delete-btn {
+  background-color: #dc2626; /* Tailwind red-600 */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.delete-btn:hover {
+  background-color: #b91c1c; /* Tailwind red-700 */
+}
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 24px;
+  background-color: white;
+  border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  padding: 6px;
+  min-width: 120px;
+}

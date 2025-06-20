@@ -1,0 +1,49 @@
+.alert-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-weight: 500;
+  font-size: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.alert-box .icon {
+  font-size: 18px;
+}
+
+.alert-box .message {
+  flex-grow: 1;
+}
+
+.alert-box .close {
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.alert-box.info {
+  background: #e0f0ff;
+  color: #1d4ed8;
+  border-left: 4px solid #3b82f6;
+}
+
+.alert-box.warning {
+  background: #fff7d1;
+  color: #b45309;
+  border-left: 4px solid #facc15;
+}
+
+.alert-box.error {
+  background: #ffe4e6;
+  color: #b91c1c;
+  border-left: 4px solid #f87171;
+}
+
+.alert-box.success {
+  background: #dcfce7;
+  color: #15803d;
+  border-left: 4px solid #4ade80;
+}

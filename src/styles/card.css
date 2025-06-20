@@ -1,0 +1,116 @@
+.main-cards {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.20);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #111827; /* ensure dark text inside */
+  min-width: 220px;
+
+  /* Added hover animation */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  will-change: transform;
+}
+
+.card:hover {
+  transform: scale(1.05) translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  z-index: 10; /* to keep hovered card on top */
+}
+
+/* Header section */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* Icon in circle */
+.card-icon {
+  background-color: #e0e7ff;
+  color: white;
+  border-radius: 50%;
+  padding: 12px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-blue .card-icon {
+  background-color: #3b82f6; /* blue-500 */
+}
+.card-orange .card-icon {
+  background-color: #f97316; /* orange-500 */
+}
+.card-purple .card-icon {
+  background-color: #8b5cf6; /* purple-500 */
+}
+
+.card-menu {
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+}
+
+/* Label under icon */
+.card-label {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #6b7280; /* gray-600 */
+}
+
+/* Number */
+.card-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #111827; /* black text */
+  margin: 6px 0;
+}
+
+/* Green badge */
+.card-growth {
+  font-size: 12px;
+  background-color: #e6f7ec;
+  color: #1faa59;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-block;
+  width: fit-content;
+  margin-top: 6px;
+  margin-left: auto; /* push it to the right */
+}
+
+.dropdown-filter {
+  appearance: none; /* Remove default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  outline: none;
+  cursor: pointer;
+
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 1rem;
+  padding-right: 36px; /* space for arrow */
+}

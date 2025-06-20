@@ -1,0 +1,118 @@
+.quarantine-table {
+  background: #ffffff;
+  margin-top: 40px;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+  padding: 20px;
+  margin-top:30px;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.table-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #111827;
+}
+
+.table-menu {
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: #374151;
+}
+
+thead {
+  background: #f9fafb;
+}
+
+th, td {
+  padding: 16px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* =========================
+   Badge Styles by Status
+   ========================= */
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 20px;
+  font-weight: 600;
+  display: inline-block;
+  text-align: center;
+  color: #fff;
+}
+
+.badge-yellow {
+  background-color: #eab308; /* Quarantined */
+}
+
+.badge-orange {
+  background-color: #f97316; /* Accepted */
+}
+
+.badge-red {
+  background-color: #ef4444; /* Blocked */
+}
+
+.badge-green {
+  background-color: #10b981; /* Delivered */
+}
+
+.badge-gray {
+  background-color: #9ca3af; /* Deferred */
+}
+
+.badge-default {
+  background-color: #6b7280; /* Fallback for unknown */
+}
+
+/* =========================
+   Optional: Search Bar Style
+   ========================= */
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 300px;
+}
+
+.search-bar input {
+  border: none;
+  outline: none;
+  margin-left: 8px;
+  width: 100%;
+  background: transparent;
+}
+
+.badge-default {
+  background-color: #ddd;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
