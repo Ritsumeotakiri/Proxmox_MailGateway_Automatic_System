@@ -54,11 +54,21 @@ The solution offers:
 
 ---
 
----
-
 ## ⚙️ Setup Instructions
 
 ### 1. Clone the Repo
 ```bash
 git clone https://github.com/Ritsumeotakiri/Proxmox_MailGateway_Automatic_System.git
+```
+### 2. Install Dependencies
+#### Backend
+```bash
+cd pmg-backend
+npm install
+```
+#### Frontend
+```bash
+npm install
+
+
 
