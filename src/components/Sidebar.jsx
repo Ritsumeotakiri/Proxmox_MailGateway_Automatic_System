@@ -1,12 +1,20 @@
 import React, { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   BsGrid1X2Fill, BsFillArchiveFill, BsFillGrid3X3GapFill, BsPeopleFill,
-  BsListCheck, BsMenuButtonWideFill, BsMailbox
+  BsListCheck, BsMenuButtonWideFill, BsMailbox,
+  BsGearFill,
+  BsPower,
+  BsFilter,
+  BsFilterCircleFill,
+  BsFilterRight,
+  BsPaperclip
 } from 'react-icons/bs';
+import '../styles/sidebar.css'; 
 
 function Sidebar({ openSidebarToggle, OpenSidebar }) {
   const sidebarRef = useRef();
+  const location = useLocation();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -15,13 +23,15 @@ function Sidebar({ openSidebarToggle, OpenSidebar }) {
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target)
       ) {
-        OpenSidebar(); // Close sidebar if clicked outside
+        OpenSidebar();
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openSidebarToggle, OpenSidebar]);
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <aside
@@ -36,20 +46,21 @@ function Sidebar({ openSidebarToggle, OpenSidebar }) {
             <div className='sidebar-brand'>
               <BsMailbox className='icon_header' />
             </div>
-            <span className='icon close_icon' onClick={OpenSidebar}>X</span>
+            {/* This icon is hidden on large screens */}
+            <span className='icon close_icon hide-on-desktop' onClick={OpenSidebar}>X</span>
           </div>
 
           <ul className='sidebar-list'>
-            <Link to="/Home" className="sidebar-list-item">
+            <Link to="/Home" className={`sidebar-list-item ${isActive("/Home") ? "active" : ""}`}>
               <BsGrid1X2Fill className='icon' /> Dashboard
             </Link>
-            <Link to="/Quarantine" className="sidebar-list-item">
+            <Link to="/Quarantine" className={`sidebar-list-item ${isActive("/Quarantine") ? "active" : ""}`}>
               <BsFillArchiveFill className='icon' /> Quarantine Management
             </Link>
-            <Link to="/policies" className="sidebar-list-item">
-              <BsFillGrid3X3GapFill className='icon' /> Filtering Rules/Policies
-            </Link>
-            <Link to="/BlockAllowList" className="sidebar-list-item">
+            <Link to="/policies" className={`sidebar-list-item ${isActive("/policies") ? "active" : ""}`}>
+              <BsFilter className='icon' /> Filtering Rules/Policies
+            </Link>    
+            <Link to="/BlockAllowList" className={`sidebar-list-item ${isActive("/BlockAllowList") ? "active" : ""}`}>
               <BsPeopleFill className='icon' /> Block/Allow List
             </Link>
           </ul>
@@ -57,14 +68,11 @@ function Sidebar({ openSidebarToggle, OpenSidebar }) {
 
         {/* Bottom section */}
         <ul className='sidebar-list sidebar-bottom'>
-          <Link to="/support" className="sidebar-list-item">
-            <BsListCheck className='icon' /> Support
-          </Link>
-          <Link to="/setting" className="sidebar-list-item">
-            <BsMenuButtonWideFill className='icon' /> Settings
+          <Link to="/setting" className={`sidebar-list-item ${isActive("/setting") ? "active" : ""}`}>
+            <BsGearFill className='icon' /> Settings
           </Link>
           <Link to="/signup" className="sidebar-list-item" onClick={() => localStorage.removeItem('token')}>
-            <BsMenuButtonWideFill className='icon' /> Logout
+            <BsPower className='icon' /> Logout
           </Link>
         </ul>
       </div>

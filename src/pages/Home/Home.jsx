@@ -36,11 +36,22 @@ function Home() {
   };
 
   useEffect(() => {
-  fetchAndPrepareTrackerData(setTrackerData, () => {}, setQurantineCount); // Live table + cards
-  ChartCount(() => {}, setMailChartData, () => {}); // MongoDB chart only
-  fetchSpamScoreData(setSpamDetected, setMailChartData); // Inject spam into chart
-}, []);
+    fetchAndPrepareTrackerData(setTrackerData, () => {}, setQurantineCount); // Live table + cards
+    ChartCount(() => {}, setMailChartData, () => {}); // MongoDB chart only
+    fetchSpamScoreData(setSpamDetected, setMailChartData); // Inject spam into chart
+  }, []);
 
+  // Filtered and reversed logs for display
+  const filteredLogs = [...trackerData]
+    .filter(log => {
+      const term = searchTerm.toLowerCase();
+      return (
+        (log.from || '').toLowerCase().includes(term) ||
+        (log.to || '').toLowerCase().includes(term) ||
+        formatTime(log.time).toLowerCase().includes(term)
+      );
+    })
+    .reverse();
 
   return (
     <div className="home-container">
@@ -128,26 +139,24 @@ function Home() {
             </tr>
           </thead>
           <tbody>
-            {[...trackerData]
-              .filter(log => {
-                const term = searchTerm.toLowerCase();
-                return (
-                  (log.from || '').toLowerCase().includes(term) ||
-                  (log.to || '').toLowerCase().includes(term) ||
-                  formatTime(log.time).toLowerCase().includes(term)
-                );
-              })
-              .reverse()
-              .map(log => (
+            {filteredLogs.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                  There is no data.
+                </td>
+              </tr>
+            ) : (
+              filteredLogs.map(log => (
                 <TableRow
                   key={`${log.id}-${log.time}`}
                   sender={log.from}
                   reason={log.to}
                   action={mapStatus(log.dstatus, log.rstatus)}
                   time={formatTime(log.time)}
-                  size={log.size || '-' }
+                  size={log.size || '-'}
                 />
-              ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -1,0 +1,16 @@
+.sidebar-list-item.active {
+  background-color: #0044cc;
+  color: white;
+  font-weight: bold;
+}
+
+.sidebar-list-item.active .icon {
+  color: white;
+}
+
+/* Hide close icon on large screens */
+@media screen and (min-width: 1024px) {
+  .hide-on-desktop {
+    display: none !important;
+  }
+}

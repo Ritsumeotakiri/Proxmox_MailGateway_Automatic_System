@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify'; // Correct import for toast
 import '../styles/policyModel.css';
+import 'react-toastify/dist/ReactToastify.css';  // Make sure to import the CSS for toasts
 
 // Preset static group mappings for rules
 const PRESETS = {
@@ -81,8 +83,13 @@ export default function RuleCreator({ visible, onClose, onConfirm }) {
     }
 
     try {
+      console.log('Creating rule...');
       await onConfirm(payload);
       setStatus('success');
+      toast.success('✅ Rule created successfully!', { // Success toast
+        position: "top-right",
+        autoClose: 5000, // Close after 5 seconds
+      });
       setTimeout(() => {
         setStatus(null);
         onClose();
@@ -90,6 +97,10 @@ export default function RuleCreator({ visible, onClose, onConfirm }) {
     } catch (err) {
       console.error('❌ Rule creation failed:', err);
       setStatus('error');
+      toast.error('❌ Failed to create rule. Please try again later.', { // Error toast
+        position: "top-right",
+        autoClose: 5000, // Close after 5 seconds
+      });
       setTimeout(() => setStatus(null), 3000);
     }
   };

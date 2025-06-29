@@ -5,7 +5,7 @@
   padding: 12px 24px;
   background-color: #ffffff;
   border-bottom: 1px solid #ddd;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);/* softer and more natural */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02); /* Softer and more natural */
 }
 
 .header-left {
@@ -28,6 +28,7 @@
   border: 1px solid #ccc;
   border-radius: 6px;
   width: 300px;
+  transition: width 0.3s ease; /* Smooth transition for mobile */
 }
 
 .search-bar input {
@@ -53,6 +54,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+  cursor: pointer;
 }
 
 .user-avatar {
@@ -87,3 +90,117 @@
   font-size: 12px;
   color: #555;
 }
+
+/* Dropdown Menu */
+.user-info:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  width: 150px;
+  padding: 8px 0;
+}
+
+.dropdown-menu button {
+  padding: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.dropdown-menu button:hover {
+  background-color: #f5f5f5;
+}
+
+/* Hide toggle icon (≡) on large screens */
+@media screen and (min-width: 1024px) {
+  .hide-on-desktop {
+    display: none !important;
+  }
+}
+
+/* Mobile Responsiveness */
+@media screen and (max-width: 768px) {
+  .header {
+    padding: 12px;
+  }
+
+  .search-bar {
+    width: 200px; /* Shrink the search bar on mobile */
+  }
+
+  .search-bar input {
+    font-size: 14px;
+  }
+
+  .header-left h4 {
+    font-size: 18px;
+  }
+
+  .header-right {
+    gap: 12px;
+  }
+
+  .icon {
+    font-size: 20px;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .header-left h4 {
+    font-size: 16px;
+  }
+
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  .user-details {
+    display: none; /* Hide details on small screens */
+  }
+
+  .dropdown-arrow {
+    display: none; /* Hide dropdown arrow on small screens */
+  }
+}
+
+.search-bar-container {
+  position: relative;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 999;
+  list-style: none;
+  padding: 0;
+  margin: 2px 0 0;
+}
+
+.search-dropdown li {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.search-dropdown li:hover {
+  background-color: #f0f0f0;
+}
+

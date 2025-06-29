@@ -8,7 +8,7 @@ export function processChartData(normalized) {
       sent: 0,
       virus: 0,
       quarantine: 0,
-      spam: 0  // <-- You can keep this if another source will inject it later
+      spam: 0  
     };
   });
 

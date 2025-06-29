@@ -1,3 +1,4 @@
+/* Modal styling */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -8,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  z-index: 999; /* Keep this z-index for modal */
 }
 
 .modal-content {
@@ -23,6 +24,31 @@
   gap: 14px;
 }
 
+/* Toast container styling */
+.Toastify__toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050; /* Ensure this z-index is higher than the modal */
+}
+
+.Toastify__toast {
+  font-size: 16px;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
+.Toastify__toast--success {
+  background-color: #4caf50;
+  color: white;
+}
+
+.Toastify__toast--error {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Modal content and buttons styling */
 .modal-content h2 {
   font-size: 20px;
   font-weight: 600;
@@ -98,4 +124,3 @@
   color: #991b1b;
   border: 1px solid #fecaca;
 }
-

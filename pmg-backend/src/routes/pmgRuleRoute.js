@@ -12,5 +12,4 @@ router.post('/', createRule);
 router.delete('/:id', deleteRule);
 
 
-
 export default router;

@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
-
+import userRoute from './routes/userRoute.js';
 import statusRoute from './routes/statusRoute.js';
 import pmgTrackerRoute from './routes/pmgTrackerRoute.js';
 import authRoute from './routes/authRoute.js';
@@ -14,6 +14,9 @@ import bot, { notifyAdmin } from './telegram/pmgBot.js';
 import { checkNewSpam } from './telegram/spamWatcher.js';
 import pmgArchiveRoute from './routes/pmgArchiveRoute.js';
 import './cron/archiveScheduler.js';
+import settingRoute from './routes/settingRoute.js';
+import './cron/cleanupCron.js'
+
 
 dotenv.config();
 
@@ -40,6 +43,8 @@ app.use('/api/stats', statsRoute);
 app.use('/api/pmg/rules', pmgRuleRoute);
 app.use('/api/pmg/block-allow', blockAllowRoute);
 app.use('/api/pmg', pmgArchiveRoute);
+app.use('/api/settings', settingRoute);
+app.use('/api/users', userRoute);
 
 
 // Telegram bot

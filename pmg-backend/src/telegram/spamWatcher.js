@@ -35,16 +35,19 @@ export async function checkNewSpam() {
     console.log(`🚨 Detected ${newMails.length} new spam messages`);
     latestSeenTime = newMails[newMails.length - 1].time;
 
-    for (const mail of newMails) {
+    const threshold = 3;
+
+    if (newMails.length >= threshold) {
       await notifyAdmin(
-        `🚨 *New Spam Quarantined!*\n\n` +
-        `📧 *From:* ${mail.sender}\n` +
-        `📨 *Subject:* ${mail.subject || '(No subject)'}\n` +
-        `🕒 *Time:* ${new Date(mail.time * 1000).toLocaleString()}\n` +
-        `🆔 *ID:* ${mail.id}`,
-        mail.id // enable Deliver/Delete buttons
+        `🚨 *Spam Threshold Alert!*\n\n` +
+        `⚠️ ${newMails.length} new spam emails quarantined in the last 5 minutes.\n\n` +
+        `🕒 Last seen at: ${new Date(latestSeenTime * 1000).toLocaleString()}\n` +
+        `➡️ Check your dashboard or PMG quarantine now.`
       );
+    } else {
+      console.log(`ℹ️ ${newMails.length} new spam < threshold (${threshold}) — no alert sent.`);
     }
+
   } catch (err) {
     console.error('❌ checkNewSpam() failed:', err.message);
   }

@@ -2,17 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BsSearch } from 'react-icons/bs';
 import Swal from 'sweetalert2';
 import RuleCreator from '../../components/RuleCreator';
-import { fetchRules, deleteRule, createRule } from '../../api/ruleService';
+import { fetchRules, deleteRule, createRule, updateRule } from '../../api/ruleService'; // ⬅️ added updateRule
 
-import '../../styles/card.css';
-import '../../styles/table.css';
-import '../../styles/header.css';
-import '../../styles/App.css';
-import '../../styles/policyModel.css';
-import '../../styles/delete.css';
+// ...styles import
 
 function Policy() {
   const [showModal, setShowModal] = useState(false);
+  const [editRule, setEditRule] = useState(null); // ⬅️ new state
   const [selectedRule, setSelectedRule] = useState(null);
   const [policyData, setPolicyData] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
@@ -66,11 +62,16 @@ function Policy() {
     try {
       await deleteRule(id);
       setPolicyData((prev) => prev.filter((r) => r.id !== id));
-      Swal.fire('Deleted!', '✅ Rule has been deleted.', 'success');
+      Swal.fire('Deleted!', 'Rule has been deleted.', 'success');
     } catch (err) {
       console.error('Delete failed:', err);
       Swal.fire('Failed', '❌ Failed to delete rule.', 'error');
     }
+  };
+
+  const handleEdit = (rule) => {
+    setEditRule(rule);
+    setShowModal(true);
   };
 
   const filteredRules = sortRules(policyData).filter(rule =>
@@ -79,12 +80,18 @@ function Policy() {
 
   const handleCreateConfirm = async (payload) => {
     try {
-      await createRule(payload);
+      if (editRule) {
+        await updateRule(editRule.id, payload); // ⬅️ edit
+      } else {
+        await createRule(payload); // ⬅️ create
+      }
+
       await loadRules();
+      setEditRule(null);
       setShowModal(false);
     } catch (err) {
-      console.error('[Error Creating Rule]', err);
-      Swal.fire('Error', '❌ Failed to create rule', 'error');
+      console.error('[Error Saving Rule]', err);
+      Swal.fire('Error', '❌ Failed to save rule', 'error');
     }
   };
 
@@ -104,7 +111,7 @@ function Policy() {
               />
             </div>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => { setEditRule(null); setShowModal(true); }}
               className="btn-primary"
             >
               Add Rule
@@ -131,6 +138,7 @@ function Policy() {
                 rule={rule}
                 onSelect={setSelectedRule}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
               />
             ))}
           </tbody>
@@ -139,8 +147,9 @@ function Policy() {
 
       <RuleCreator
         visible={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => { setShowModal(false); setEditRule(null); }}
         onConfirm={handleCreateConfirm}
+        initialData={editRule}
       />
 
       {selectedRule && (
@@ -169,7 +178,7 @@ function Policy() {
   );
 }
 
-function PolicyRow({ rule, onSelect, onDelete }) {
+function PolicyRow({ rule, onSelect, onDelete, onEdit }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef();
 
@@ -212,8 +221,11 @@ function PolicyRow({ rule, onSelect, onDelete }) {
         <div onClick={() => setMenuOpen(!menuOpen)} style={{ cursor: 'pointer' }}>⋮</div>
         {menuOpen && (
           <div className="dropdown-menu">
+            <button onClick={() => { setMenuOpen(false); onEdit(rule); }}>
+              Edit
+            </button>
             <button className="delete-btn" onClick={() => { setMenuOpen(false); onDelete(rule.id); }}>
-              🗑 Delete
+              Delete
             </button>
           </div>
         )}

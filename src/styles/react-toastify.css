@@ -1,0 +1,38 @@
+/* Custom styling for toast notifications */
+.Toastify__toast-container {
+  position: fixed;
+  top: 20px; /* Space from the top of the screen */
+  right: 20px; /* Space from the right of the screen */
+  z-index: 9999; /* Ensures the toast is on top of other content */
+}
+
+.Toastify__toast {
+  font-size: 16px;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
+.Toastify__toast--success {
+  background-color: #4caf50; /* Green for success */
+  color: white;
+}
+
+.Toastify__toast--error {
+  background-color: #f44336; /* Red for error */
+  color: white;
+}
+
+.Toastify__toast--info {
+  background-color: #2196f3; /* Blue for info */
+  color: white;
+}
+
+.Toastify__toast--warning {
+  background-color: #ff9800; /* Yellow for warning */
+  color: white;
+}
+
+.Toastify__toast--default {
+  background-color: #333; /* Dark background for default toast */
+  color: white;
+}

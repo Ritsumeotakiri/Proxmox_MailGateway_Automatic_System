@@ -65,7 +65,9 @@ function Quarantine() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div
+          style={{ marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}
+        >
           <label>Filter by Reason:</label>
           <select value={reasonFilter} onChange={e => setReasonFilter(e.target.value)}>
             <option value="All">All</option>
@@ -88,9 +90,17 @@ function Quarantine() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(item => (
-              <TableRow key={item.id} {...item} onDelete={handleRemoveFromList} />
-            ))}
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
+                  There is no qurantine mail yet.
+                </td>
+              </tr>
+            ) : (
+              filtered.map(item => (
+                <TableRow key={item.id} {...item} onDelete={handleRemoveFromList} />
+              ))
+            )}
           </tbody>
         </table>
       </div>
