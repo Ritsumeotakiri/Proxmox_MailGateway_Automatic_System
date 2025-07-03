@@ -95,7 +95,8 @@ TELEGRAM_ADMIN_ID=YourTelegramAdminID
 ```
 ### 4. Pmg Script creation Configuration
 #### Script for pmg to Track the Log to make it Live data and Push notification
-
+##### Noted 
+###### If you want to make this script to run automatically you will have to create another service to run it in the background and beware of the security risk to the server i haven't work on it yet.
 ```bash
     #!/bin/bash
     
