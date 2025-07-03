@@ -60,7 +60,8 @@ The solution offers:
 | Scheduling     | node-cron                  |
 | Testing        | Thunder Client             |
 | Auth & Security| JWT, .env config           |
-
+| Use Socket     | Display a live data from   |
+|                |  directly form server      |
 ---
 
 ## ⚙️ Setup Instructions
@@ -92,6 +93,47 @@ TELEGRAM_BOT_TOKEN=your_bot_token
 MONGO_URI=Yourmongodb uri
 TELEGRAM_ADMIN_ID=YourTelegramAdminID
 ```
+### 4. Pmg Script creation Configuration
+#### Script for pmg to Track the Log to make it Live data and Push notification
+
+```bash
+    #!/bin/bash
+    
+    LOGFILE="/var/log/mail.log"
+    KEYWORDS="spam|virus|quarantine|blocked"
+    WEBHOOK_URL="http://192.168.100.26:3000/webhook"
+    
+    last_alert_line=""
+    
+    # Ensure jq is available
+    if ! command -v jq &> /dev/null; then
+      echo "❌ jq is not installed. Please install it: sudo apt install jq"
+      exit 1
+    fi
+    
+    echo "📡 Mail log watcher started..."
+    tail -F "$LOGFILE" | while read -r line; do
+      # Check if the line contains alert keywords
+      if echo "$line" | grep -iqE "$KEYWORDS"; then
+        if [ "$line" != "$last_alert_line" ]; then
+          echo "[ALERT] Detected: $line"
+          curl -s -X POST -H "Content-Type: application/json" \
+            -d "$(jq -n --arg event "mail_alert" --arg message "$line" '{event: $event, message: $message}')" \
+            "$WEBHOOK_URL" >/dev/null &
+          last_alert_line="$line"
+        else
+          echo "🔁 Duplicate alert ignored"
+     fi
+      else
+        # Send normal log for page update
+        echo "[INFO] Log: $line"
+        curl -s -X POST -H "Content-Type: application/json" \
+          -d "$(jq -n --arg event "mail_log" --arg message "$line" '{event: $event, message: $message}')" \
+          "$WEBHOOK_URL" >/dev/null &
+      fi
+    done
+```
+
 ## 📄 License & Ownership
 
 This project is fully reserved and developed by Say Sakphearith.

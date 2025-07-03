@@ -1,24 +1,33 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { BsFillArchiveFill, BsFillGrid3X3GapFill, BsPeopleFill } from 'react-icons/bs';
 import {
-  BsFillArchiveFill,
-  BsFillGrid3X3GapFill,
-  BsPeopleFill,
-} from 'react-icons/bs';
-import {
-  BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import io from 'socket.io-client';
 
 import '../../styles/card.css';
 import '../../styles/table.css';
 import '../../styles/header.css';
 import '../../styles/App.css';
 
-import { fetchAndPrepareTrackerData, fetchSpamScoreData, ChartCount } from '../../api/fetchTrackerData';
+import {
+  fetchAndPrepareTrackerData,
+  fetchSpamScoreData,
+  ChartCount,
+} from '../../api/fetchTrackerData';
 import { formatTime, mapStatus } from '../../utils/formatUtils';
 import { Card } from './components/Card';
 import { TableRow } from './components/TableRow';
+
+const socket = io('http://localhost:3000');
 
 function Home() {
   const navigate = useNavigate();
@@ -30,20 +39,58 @@ function Home() {
   const [qurantineCount, setQurantineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const trackingRef = useRef(null);
+  const shownAlerts = useRef(new Set());
 
   const scrollToTracking = () => {
     trackingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const fetchAll = () => {
+    fetchAndPrepareTrackerData(setTrackerData, () => {}, setQurantineCount);
+    ChartCount(() => {}, setMailChartData, () => {});
+    fetchSpamScoreData(setSpamDetected, setMailChartData);
+  };
+
   useEffect(() => {
-    fetchAndPrepareTrackerData(setTrackerData, () => {}, setQurantineCount); // Live table + cards
-    ChartCount(() => {}, setMailChartData, () => {}); // MongoDB chart only
-    fetchSpamScoreData(setSpamDetected, setMailChartData); // Inject spam into chart
+    fetchAll();
+
+    console.log('Setting up socket listeners');
+
+    socket.on('mailLog', (data) => {
+      console.log('mailLog event received:', data.message);
+      fetchAll();
+    });
+
+    socket.on('mailAlert', (data) => {
+      const alertKey = `${data.message}-${new Date(data.time).getTime()}`;
+      if (!shownAlerts.current.has(alertKey)) {
+        shownAlerts.current.add(alertKey);
+
+        // Optional cleanup to limit memory usage
+        if (shownAlerts.current.size > 50) {
+          const first = shownAlerts.current.values().next().value;
+          shownAlerts.current.delete(first);
+        }
+
+        console.log('mailAlert event received:', data.message);
+        fetchAll();
+
+        // Optional: trigger a toast here
+        // toast.info(data.message);
+      } else {
+        console.log('Duplicate alert skipped:', data.message);
+      }
+    });
+
+    return () => {
+      console.log('Cleaning up socket listeners');
+      socket.off('mailLog');
+      socket.off('mailAlert');
+    };
   }, []);
 
-  // Filtered and reversed logs for display
   const filteredLogs = [...trackerData]
-    .filter(log => {
+    .filter((log) => {
       const term = searchTerm.toLowerCase();
       return (
         (log.from || '').toLowerCase().includes(term) ||
@@ -146,7 +193,7 @@ function Home() {
                 </td>
               </tr>
             ) : (
-              filteredLogs.map(log => (
+              filteredLogs.map((log) => (
                 <TableRow
                   key={`${log.id}-${log.time}`}
                   sender={log.from}

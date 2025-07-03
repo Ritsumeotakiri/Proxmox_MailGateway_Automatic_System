@@ -1,4 +1,6 @@
 import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
@@ -15,12 +17,10 @@ import { checkNewSpam } from './telegram/spamWatcher.js';
 import pmgArchiveRoute from './routes/pmgArchiveRoute.js';
 import './cron/archiveScheduler.js';
 import settingRoute from './routes/settingRoute.js';
-import './cron/cleanupCron.js'
-
+import './cron/cleanupCron.js';
 
 dotenv.config();
 
-// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
@@ -30,8 +30,11 @@ mongoose
   });
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*' },
+});
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -46,19 +49,53 @@ app.use('/api/pmg', pmgArchiveRoute);
 app.use('/api/settings', settingRoute);
 app.use('/api/users', userRoute);
 
+// Store the last alert message to prevent duplicates
+let lastAlertMessage = '';
 
-// Telegram bot
+app.post('/webhook', (req, res) => {
+  const { event, message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ status: 'missing message' });
+  }
+
+  console.log('📩 Webhook received:', message);
+
+  const time = new Date().toISOString();
+
+  // Always broadcast logs to frontend for UI updates
+  io.emit('mailLog', {
+    message,
+    time,
+  });
+
+  // Only emit alerts when spam was actually quarantined
+const alertKeywords = ['quarantined', 'moved mail', 'to spam quarantine'];
+if (alertKeywords.some(keyword => message.toLowerCase().includes(keyword))) {
+  io.emit('mailAlert', {
+    event,
+    message,
+    time: new Date().toISOString(),
+  });
+  return res.status(200).json({ status: 'alert sent' });
+}
+
+
+  return res.status(200).json({ status: 'log broadcasted (non-alert or duplicate)' });
+});
+
 bot.start();
 console.log('✅ Telegram bot started');
-// notifyAdmin('✅ PMG backend started and Telegram bot initialized');
 
-// Periodic spam check
 setInterval(() => {
-  checkNewSpam();
+  checkNewSpam(io); // You may need to pass io to spamWatcher.js to emit from there
 }, 30 * 1000);
 
-// Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ PMG backend listening on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`✅ PMG backend + socket listening on port ${PORT}`);
+});
+
+io.on('connection', (socket) => {
+  console.log('📡 React client connected:', socket.id);
 });
