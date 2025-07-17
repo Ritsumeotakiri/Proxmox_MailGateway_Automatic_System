@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../../styles/setting.css';
 import PMGConnectionModal from '../../components/setting_PMG_model';
 import { getQuarantineSettings, saveQuarantineSettings } from '../../api/settingsApi';
-import { fetchCurrentUser } from '../../api/auth/auth';  // import your fetchCurrentUser
+import { fetchCurrentUser } from '../../api/auth/auth';  
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -87,7 +87,7 @@ function SettingsPage() {
   return (
     <main className="settings-page">
       {/* PMG Connection Settings */}
-      <SettingsCard title="PMG Connection Settings">
+      {/* <SettingsCard title="PMG Connection Settings">
         <tr
           className="border-t cursor-pointer hover:bg-gray-50 transition"
           onClick={() => setShowModal(true)}
@@ -97,9 +97,9 @@ function SettingsPage() {
           <td className="px-4 py-3"></td>
           <td className="px-4 py-3 text-center">⋮</td>
         </tr>
-      </SettingsCard>
+      </SettingsCard> */}
 
-      {/* Telegram Bot Settings */}
+      {/* Telegram Bot Settings
       <SettingsCard title="Telegram Bot Settings">
         <tr className="border-t">
           <td className="px-4 py-3">Telegram Bot</td>
@@ -107,7 +107,7 @@ function SettingsPage() {
           <td className="px-4 py-3">Active</td>
           <td className="px-4 py-3 text-center">⋮</td>
         </tr>
-      </SettingsCard>
+      </SettingsCard> */}
 
       {/* Profile Settings */}
       <SettingsCard title="Profile Settings">

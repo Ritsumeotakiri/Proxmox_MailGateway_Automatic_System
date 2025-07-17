@@ -1,65 +1,73 @@
-const BASE_URL = 'http://localhost:3000/api/pmg';
+async function request(path, options = {}) {
+  const token = localStorage.getItem('token');
 
-// Generic API wrapper
-async function apiRequest(endpoint, options = {}) {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+  const defaultHeaders = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const res = await fetch(`/api/pmg${path}`, {
     ...options,
+    headers: {
+      ...defaultHeaders,
+      ...(options.headers || {}),
+    },
   });
 
   const data = await res.json();
+
   if (!res.ok) {
-    console.error(`[API ERROR] ${endpoint}:`, data);
-    throw new Error(data.message || data.error || 'API request failed');
+    console.error(`[API ERROR] ${path}:`, data);
+    throw new Error(data.message || data.error || 'Unknown error');
   }
+
   return data;
 }
 
-// Get all rules
+// ───── CRUD RULES ─────
+
 export async function fetchRules() {
-  const data = await apiRequest('/rules');
-  return data.data || [];
+  const res = await request('/rules');
+  return res.data || [];
 }
 
-// Create a new rule with raw condition as whatGroup
 export async function createRule(data) {
-  return apiRequest('/rules', {
+  return request('/rules', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-
-// Delete a rule by ID
-export async function deleteRule(id) {
-  return apiRequest(`/rules/${id}`, { method: 'DELETE' });
-}
-
-// Update a rule by ID
 export async function updateRule(id, payload) {
-  return apiRequest(`/rules/${id}`, {
+  return request(`/rules/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 }
 
-// OPTIONAL: Fetch available action groups from backend
-export async function fetchActionGroups() {
-  const data = await apiRequest('/action/objects');
-  return data.data || [];
+export async function deleteRule(id) {
+  return request(`/rules/${id}`, {
+    method: 'DELETE',
+  });
 }
 
-// OPTIONAL: If you still want to support fetching what groups
+// ───── OPTIONAL STATIC FETCHERS ─────
+
+export async function fetchActionGroups() {
+  const res = await request('/action/objects');
+  return res.data || [];
+}
+
 export async function fetchWhatGroups() {
-  const data = await apiRequest('/what');
-  return data.data || [];
+  const res = await request('/what');
+  return res.data || [];
 }
 
 export async function fetchFromGroups() {
   return [
     { id: 1, name: "All Senders" },
     { id: 2, name: "Known Spammers" },
-  ]; // PMG doesn't support GET for /from, so use static or preload
+  ];
 }
 
 export async function fetchToGroups() {

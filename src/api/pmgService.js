@@ -1,5 +1,3 @@
-// src/api/pmg.js
-
 async function request(path, options = {}) {
   const defaultHeaders = {
     'Content-Type': 'application/json',

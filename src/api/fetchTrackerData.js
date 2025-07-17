@@ -48,9 +48,8 @@ export async function ChartCount (setData, setChart, setQuarantineCount) {
 }
 
 
-
 /**
- * Fetch Spam Score Data
+ * Fetch Spam Score Data - Merge spam count into existing chart data
  */
 export async function fetchSpamScoreData(setSpamDetected, setChartData) {
   try {
@@ -59,8 +58,8 @@ export async function fetchSpamScoreData(setSpamDetected, setChartData) {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    const data = await res.json();
 
+    const data = await res.json();
     const monthlySpam = {};
 
     data.data.forEach(item => {
@@ -76,7 +75,7 @@ export async function fetchSpamScoreData(setSpamDetected, setChartData) {
     setSpamDetected(totalSpam);
 
     setChartData(prev =>
-      prev.map(entry => ({
+      (prev || []).map(entry => ({
         ...entry,
         spam: monthlySpam[entry.name] || 0
       }))
@@ -84,5 +83,65 @@ export async function fetchSpamScoreData(setSpamDetected, setChartData) {
   } catch (err) {
     console.error('Failed to fetch spam score data:', err);
     setSpamDetected(0);
+  }
+}
+
+export async function fetchMailLogChart(setChartData) {
+  try {
+    const res = await fetch('/api/stats/logs', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    const logs = await res.json();
+    const currentYear = new Date().getFullYear();
+
+    // Step 1: Prepare 12 months with default values
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const label = new Date(currentYear, i).toLocaleString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      });
+
+      return {
+        name: label,
+        sent: 0,
+        spam: 0,
+        virus: 0,
+        quarantine: 0,
+      };
+    });
+
+    // Step 2: Loop through logs and update the right month
+    logs.forEach(log => {
+      const date = new Date(log.date);
+      const label = date.toLocaleString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      });
+
+      const monthEntry = months.find(m => m.name === label);
+      if (!monthEntry) return;
+
+      // Every mail log is one "sent"
+      monthEntry.sent += 1;
+
+      // If it's spam
+      if (log.isSpam) {
+        monthEntry.spam += 1;
+        monthEntry.quarantine += 1;
+      }
+
+      // If it's virus
+      if (log.isVirus) {
+        monthEntry.virus += 1;
+        monthEntry.quarantine += 1;
+      }
+    });
+
+    setChartData(months);
+  } catch (err) {
+    console.error('❌ Failed to fetch chart logs:', err);
   }
 }

@@ -1,4 +1,3 @@
-// src/models/MailStats.js
 import mongoose from 'mongoose';
 
 const mailStatsSchema = new mongoose.Schema({

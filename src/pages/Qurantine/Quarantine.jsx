@@ -1,111 +1,50 @@
-import React, { useEffect, useState } from 'react';
-import { BsSearch } from 'react-icons/bs';
+import React from 'react';
 import Swal from 'sweetalert2';
+import { capitalize } from '../../../utils/formatters';
+import { quarantineAction } from '../../../api/pmgService';
 
-import '../../styles/card.css';
-import '../../styles/table.css';
-import '../../styles/header.css';
-import '../../styles/App.css';
-import '../../styles/popup.css';
+function TableRow({ id, sender, receiver, reason, time, size, onDelete }) {
+  const handleAction = async (type) => {
+    const result = await Swal.fire({
+      title: `Are you sure?`,
+      text: `You are about to ${type} this email.`,
+      showCancelButton: true,
+      confirmButtonText: `Yes, ${type} it!`,
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
 
-import TableRow from '../Qurantine/components/TableRow';
-import { formatReadableTime, formatSize } from '../../utils/formatters';
-import { fetchQuarantineData } from '../../api/pmgService';
+    if (!result.isConfirmed) return;
 
-function Quarantine() {
-  const [quarantineData, setQuarantineData] = useState([]);
-  const [search, setSearch] = useState('');
-  const [reasonFilter, setReasonFilter] = useState('All');
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
     try {
-      const data = await fetchQuarantineData();
-      const formatted = data.map(item => ({
-        ...item,
-        time: formatReadableTime(item.time),
-        size: formatSize(item.size),
-      }));
-      setQuarantineData(formatted);
+      await quarantineAction(id, type);
+      Swal.fire('Success', ` Mail ${type}d successfully.`, 'success');
+
+      if (type === 'delete') {
+        onDelete(id);
+      }
     } catch (err) {
-      Swal.fire('Error', 'Could not load quarantine data', 'error');
+      Swal.fire('Failed', `❌ ${err.message}`, 'error');
     }
   };
 
-  // ⬇️ Remove item from local list after delete
-  const handleRemoveFromList = (id) => {
-    setQuarantineData(prev => prev.filter(item => item.id !== id));
-  };
-
-  const filtered = quarantineData.filter(({ sender, receiver, reason }) => {
-    const matchesSearch = [sender, receiver, reason].some(field =>
-      field?.toLowerCase().includes(search.toLowerCase())
-    );
-    const matchesFilter =
-      reasonFilter === 'All' || reason === reasonFilter.toLowerCase();
-    return matchesSearch && matchesFilter;
-  });
-
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="quarantine-table">
-        <div className="table-header">
-          <h3>Quarantine Management</h3>
-          <div className="search-bar">
-            <BsSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search here"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div
-          style={{ marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}
-        >
-          <label>Filter by Reason:</label>
-          <select value={reasonFilter} onChange={e => setReasonFilter(e.target.value)}>
-            <option value="All">All</option>
-            <option value="Spam">Spam</option>
-            <option value="Virus">Virus</option>
-            <option value="Blacklist">Blacklist</option>
-            <option value="Attachment">Attachment</option>
-          </select>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Sender</th>
-              <th>Receiver</th>
-              <th>Quarantine Reason</th>
-              <th>Time</th>
-              <th>Message Size</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
-                  There is no qurantine mail yet.
-                </td>
-              </tr>
-            ) : (
-              filtered.map(item => (
-                <TableRow key={item.id} {...item} onDelete={handleRemoveFromList} />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </main>
+    <tr>
+      <td>{sender}</td>
+      <td>{receiver}</td>
+      <td>{capitalize(reason)}</td>
+      <td>{time}</td>
+      <td>{size}</td>
+      <td>
+        <button onClick={() => handleAction('deliver')} className="btn btn-sm btn-green">
+          Deliver
+        </button>{' '}
+        <button onClick={() => handleAction('delete')} className="btn btn-sm btn-red">
+          Delete
+        </button>
+      </td>
+    </tr>
   );
 }
 
-export default Quarantine;
+export default TableRow;

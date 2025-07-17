@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import {
   BsFillBellFill,
   BsSearch,
@@ -8,15 +9,19 @@ import {
 } from 'react-icons/bs';
 import '../styles/Header.css';
 
+const socket = io();
+
 function Header({ OpenSidebar, user }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [alerts, setAlerts] = useState([]);
+  const [showAlerts, setShowAlerts] = useState(false);
+  const alertsRef = useRef(null);
 
   const navigate = useNavigate();
 
-  // Mapping search items to actual routes
   const routeMap = {
     dashboard: '/Home',
     quarantine: '/Quarantine',
@@ -24,10 +29,9 @@ function Header({ OpenSidebar, user }) {
     policies: '/policies',
     'block allow list': '/BlockAllowList',
     settings: '/setting',
-    profile: '/setting', // Adjust if profile has a different route
+    profile: '/setting',
   };
 
-  // Handle selecting a search result
   const handleSelect = (item) => {
     const path = routeMap[item.toLowerCase()];
     if (path) {
@@ -37,25 +41,20 @@ function Header({ OpenSidebar, user }) {
     }
   };
 
-  // Apply theme on mount or theme change
   useEffect(() => {
     document.body.className = theme;
   }, [theme]);
 
-  // Handle search filtering
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setSearchResults([]);
       setShowDropdown(false);
       return;
     }
-
     const mockData = ['Dashboard', 'Quarantine', 'Policies', 'Block Allow List', 'Settings', 'rules'];
-
     const results = mockData.filter(item =>
       item.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
     setSearchResults(results);
     setShowDropdown(true);
   }, [searchQuery]);
@@ -75,6 +74,59 @@ function Header({ OpenSidebar, user }) {
     navigate('/setting');
   };
 
+  const toggleAlerts = () => {
+    setShowAlerts(prev => !prev);
+  };
+
+  const clearAlerts = () => {
+    setAlerts([]);
+  };
+
+  useEffect(() => {
+    socket.on('mailAlert', (data) => {
+      let simpleMessage = "Spam detected";
+      if (data.message && data.message.toLowerCase().includes("quarantine")) {
+        simpleMessage = "New spam email quarantined";
+      } else if (data.message && data.message.toLowerCase().includes("from=<spammer")) {
+        simpleMessage = "Spam email detected";
+      }
+
+      const alertObj = {
+        message: simpleMessage,
+        time: data.time || new Date().toISOString()
+      };
+
+      setAlerts(prev => [alertObj, ...prev]);
+    });
+
+    return () => {
+      socket.off('mailAlert');
+    };
+  }, []);
+
+  // Close alerts dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (alertsRef.current && !alertsRef.current.contains(event.target)) {
+        setShowAlerts(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const onAlertClick = (index) => {
+    setAlerts(prev => {
+      const newAlerts = [...prev];
+      newAlerts.splice(index, 1);
+      return newAlerts;
+    });
+    setShowAlerts(false);
+    navigate('/Quarantine');
+  };
+
   return (
     <header className="header">
       <div className="header-left">
@@ -83,7 +135,6 @@ function Header({ OpenSidebar, user }) {
       </div>
 
       <div className="header-right">
-        {/* Search bar */}
         <div className="search-bar-container">
           <div className="search-bar">
             <BsSearch className="search-icon" />
@@ -96,8 +147,6 @@ function Header({ OpenSidebar, user }) {
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             />
           </div>
-
-          {/* Dropdown List */}
           {showDropdown && searchResults.length > 0 && (
             <ul className="search-dropdown">
               {searchResults.map((item, index) => (
@@ -112,12 +161,68 @@ function Header({ OpenSidebar, user }) {
                 </li>
               ))}
             </ul>
-
           )}
         </div>
 
-        <BsFillBellFill className="icon" />
-        <BsMoon className="icon" onClick={toggleTheme} />
+        <div className="notification-wrapper" style={{ position: 'relative' }} ref={alertsRef}>
+          <BsFillBellFill className="icon" onClick={toggleAlerts} />
+          {alerts.length > 0 && (
+            <span className="notification-count" style={{
+              position: 'absolute',
+              top: -4,
+              right: -6,
+              backgroundColor: 'red',
+              borderRadius: '50%',
+              color: 'white',
+              fontSize: '12px',
+              padding: '2px 6px'
+            }}>
+              {alerts.length}
+            </span>
+          )}
+
+          {showAlerts && (
+            <div className="alerts-dropdown" style={{
+              position: 'absolute',
+              top: '30px',
+              right: 0,
+              width: '300px',
+              maxHeight: '300px',
+              overflowY: 'auto',
+              backgroundColor: 'white',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+              padding: '10px',
+              borderRadius: '4px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <strong>Mail Alerts</strong>
+                <button onClick={clearAlerts} style={{ cursor: 'pointer', fontSize: '12px' }}>Clear</button>
+              </div>
+              {alerts.length === 0 ? (
+                <p>No new alerts</p>
+              ) : (
+                alerts.map((alert, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => onAlertClick(idx)}
+                    style={{
+                      borderBottom: '1px solid #eee',
+                      padding: '5px 0',
+                      fontSize: '14px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div>{alert.message}</div>
+                    <small>{new Date(alert.time).toLocaleTimeString()}</small>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        
 
         <div className="user-info">
           <div className="user-avatar">{user?.initials || 'NA'}</div>
@@ -127,7 +232,6 @@ function Header({ OpenSidebar, user }) {
           </div>
           <div className="dropdown-arrow">▾</div>
 
-          {/* Dropdown Menu */}
           <div className="dropdown-menu">
             <button>Profile</button>
             <button onClick={handleSettings}>Settings</button>

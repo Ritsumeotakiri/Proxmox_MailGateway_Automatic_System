@@ -10,7 +10,7 @@ export async function archivePmgLogs() {
     const response = await pmgAxios.get('/nodes/pmg/tracker');
     const logs = response.data.data || [];
 
-    console.log('✅ PMG logs fetched:', logs.length);
+    // console.log('✅ PMG logs fetched:', logs.length);
 
     const preparedLogs = logs.map(log => ({
       ...log,

@@ -1,31 +1,31 @@
+// routes/mailStatsRoute.js
 import express from 'express';
-import { updateMailStats } from '../controllers/mailStatsController.js';
-import { MongoClient } from 'mongodb';
+import Statistic from '../model/statistic.js';
+import { handleMailEvent } from '../controllers/mailcount.js';
+import verifyToken from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
-// Existing stats updater
-router.post('/stats/update', updateMailStats);
-
-
-router.get('/chart-data', async (req, res) => {
+// ✅ Manual trigger for mail event (useful for testing)
+router.post('/event', async (req, res) => {
   try {
-    const client = new MongoClient(process.env.MONGO_URI);
-    await client.connect();
-    const db = client.db('pmg_dashboard');
-    const collection = db.collection('tracker_logs');
-
-    const logs = await collection.find({
-      timeISO: {
-        $gte: new Date('2025-01-01') 
-      }
-    }).toArray();
-
-    await client.close();
-    res.json(logs);
+    await handleMailEvent(req.body);
+    res.status(200).json({ success: true, message: 'Mail event processed.' });
   } catch (err) {
-    console.error('❌ Failed to get chart data:', err);
-    res.status(500).json({ error: 'Failed to load chart data' });
+    console.error('❌ Error in /api/stats/event:', err);
+    res.status(500).json({ error: 'Failed to process mail event.' });
+  }
+});
+
+// ✅ Return full mail logs for analysis/debug
+router.get('/logs', verifyToken, async (req, res) => {
+  try {
+    const stat = await Statistic.findById('default-stat'); // Always get the fixed ID
+    if (!stat || !stat.mailLogs) return res.json([]);
+    res.json(stat.mailLogs);
+  } catch (err) {
+    console.error('❌ Error in /api/stats/logs:', err);
+    res.status(500).json({ error: 'Failed to load logs' });
   }
 });
 

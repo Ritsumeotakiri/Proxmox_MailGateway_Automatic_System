@@ -19,11 +19,6 @@ The solution offers:
 ## This system aims to modernize and automate critical email security operations using Proxmox Mail Gateway.
 
 
-
-
-
-
-
 ## 🚀 Features
 
 ### ✅ REST API (Node.js)
@@ -32,6 +27,7 @@ The solution offers:
 - Manage blacklists/whitelists
 - Manage Rule for the System
 - Secure with JWT/API Key
+- Handle socket from PMG
 
 ### 📊 Web Dashboard (React)
 - Real-time visualization of mail stats

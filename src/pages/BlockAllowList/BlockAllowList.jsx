@@ -1,48 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BsSearch } from 'react-icons/bs';
+import Swal from 'sweetalert2';
+import axios from 'axios';
 import { FiMoreVertical } from 'react-icons/fi';
 import AddRuleModal from '../../components/Black_WhiteModel';
-import axios from 'axios';
-import Swal from 'sweetalert2';
 import '../../styles/BlockAllowList.css';
 
 function BlockAllowList() {
   const [policyData, setPolicyData] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dropdownIndex, setDropdownIndex] = useState(null);
   const [editData, setEditData] = useState(null);
-  const dropdownRefs = useRef([]);
+  const [menuIndex, setMenuIndex] = useState(null);
+  const menuRef = useRef(null);
+
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     fetchBlockAllowList();
   }, []);
 
-  const setDropdownRef = (index, el) => {
-    dropdownRefs.current[index] = el;
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const clickedOutside = !dropdownRefs.current.some(
-        ref => ref && ref.contains(event.target)
-      );
-      if (clickedOutside) setDropdownIndex(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const fetchBlockAllowList = async () => {
     try {
-      const res = await axios.get('/api/pmg/block-allow/list');
+      const res = await axios.get('/api/pmg/block-allow/list', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       const merged = [
         ...res.data.blacklist.map(e => ({ ...e, type: 'Blacklist' })),
-        ...res.data.whitelist.map(e => ({ ...e, type: 'Whitelist' }))
+        ...res.data.whitelist.map(e => ({ ...e, type: 'Whitelist' })),
       ];
       setPolicyData(merged);
     } catch (err) {
-      console.error('Failed to fetch data', err);
+      Swal.fire('❌ Error', 'Failed to fetch block/allow data', 'error');
     }
   };
 
@@ -53,36 +43,38 @@ function BlockAllowList() {
     'IP Network': 'network',
     'LDAP Group': 'ldapgroup',
     'LDAP User': 'ldapuser',
-    'Regular Expression': 'regex'
+    'Regular Expression': 'regex',
   };
 
   const handleAddRule = async (rule, isEdit = false, original = null) => {
-  try {
-    if (isEdit && original) {
-      const ogroup = original.ogroup; // 👈 use real group ID from data
-      const mappedOtype = otypeMap[original.otype_text];
-      if (!mappedOtype) throw new Error('Invalid otype for edit');
+    try {
+      if (isEdit && original) {
+        const ogroup = original.ogroup;
+        const mappedOtype = otypeMap[original.otype_text];
+        if (!mappedOtype) throw new Error('Invalid otype for edit');
 
-      await axios.put(`/api/pmg/block-allow/${ogroup}/${original.id}`, {
-        value: rule.value,
-        otype: mappedOtype
-      });
+        await axios.put(`/api/pmg/block-allow/${ogroup}/${original.id}`, {
+          value: rule.value,
+          otype: mappedOtype,
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      Swal.fire('✅ Updated', 'Entry updated successfully.', 'success');
-    } else {
-      await axios.post('/api/pmg/block-allow', rule);
-      Swal.fire('✅ Success', 'Rule added successfully.', 'success');
+        Swal.fire('✅ Updated', 'Entry updated successfully.', 'success');
+      } else {
+        await axios.post('/api/pmg/block-allow', rule, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        Swal.fire('✅ Success', 'Rule added successfully.', 'success');
+      }
+
+      setShowModal(false);
+      setEditData(null);
+      fetchBlockAllowList();
+    } catch (err) {
+      Swal.fire('❌ Failed', err.response?.data?.error || err.message, 'error');
     }
-
-    setShowModal(false);
-    setEditData(null);
-    fetchBlockAllowList();
-  } catch (err) {
-    Swal.fire('❌ Failed', err.response?.data?.error || err.message, 'error');
-  }
-};
-
-
+  };
 
   const handleDelete = async (type, id) => {
     const result = await Swal.fire({
@@ -98,7 +90,9 @@ function BlockAllowList() {
     const ogroup = type.toLowerCase() === 'blacklist' ? 2 : 3;
 
     try {
-      await axios.delete(`/api/pmg/block-allow/${ogroup}/${id}`);
+      await axios.delete(`/api/pmg/block-allow/${ogroup}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       fetchBlockAllowList();
       Swal.fire('Deleted!', 'Entry has been deleted.', 'success');
     } catch (err) {
@@ -109,24 +103,28 @@ function BlockAllowList() {
   const handleEdit = (entry) => {
     setEditData(entry);
     setShowModal(true);
-    setDropdownIndex(null);
+    setMenuIndex(null);
   };
+
+  useEffect(() => {
+    const closeDropdown = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuIndex(null);
+      }
+    };
+    document.addEventListener('mousedown', closeDropdown);
+    return () => document.removeEventListener('mousedown', closeDropdown);
+  }, []);
 
   const filteredData = policyData.filter(entry => {
     const keyword = searchTerm.toLowerCase();
-    return (
-      (entry.email && entry.email.toLowerCase().includes(keyword)) ||
-      (entry.domain && entry.domain.toLowerCase().includes(keyword)) ||
-      (entry.ip && entry.ip.toLowerCase().includes(keyword)) ||
-      (entry.regex && entry.regex.toLowerCase().includes(keyword)) ||
-      (entry.ldapgroup && entry.ldapgroup.toLowerCase().includes(keyword)) ||
-      (entry.ldapuser && entry.ldapuser.toLowerCase().includes(keyword)) ||
-      (entry.descr && entry.descr.toLowerCase().includes(keyword))
+    return Object.values(entry).some(val =>
+      typeof val === 'string' && val.toLowerCase().includes(keyword)
     );
   });
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8" style={{ width: '100%' }}>
+    <main className="min-h-screen bg-gray-50 p-8">
       <div className="blockallow-table-container">
         <div className="blockallow-table-header">
           <h3>Block/Allow List</h3>
@@ -141,18 +139,7 @@ function BlockAllowList() {
               />
             </div>
             <button
-              style={{
-                padding: '6px 16px',
-                backgroundColor: '#2563eb',
-                color: 'white',
-                borderRadius: 8,
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: 14,
-                boxShadow: '0 2px 6px rgb(37 99 235 / 0.5)',
-                whiteSpace: 'nowrap',
-              }}
+              className="btn-primary"
               onClick={() => {
                 setEditData(null);
                 setShowModal(true);
@@ -170,21 +157,48 @@ function BlockAllowList() {
               <th>Type</th>
               <th>OType</th>
               <th>Status</th>
-              <th style={{ width: 30, textAlign: 'center' }}>⋮</th>
+              <th>⋮</th>
             </tr>
           </thead>
           <tbody>
             {filteredData.map((item, idx) => (
-              <BlockAllowRow
-                key={idx}
-                rowIndex={idx}
-                {...item}
-                onDelete={() => handleDelete(item.type, item.id)}
-                onEdit={() => handleEdit(item)}
-                isDropdownOpen={dropdownIndex === idx}
-                toggleDropdown={() => setDropdownIndex(dropdownIndex === idx ? null : idx)}
-                onOutsideClickRef={setDropdownRef}
-              />
+              <tr key={idx}>
+                <td>{item.email || item.domain || item.ip || item.regex || item.ldapgroup || item.ldapuser || item.descr || '—'}</td>
+                <td><span className={`badge ${item.type === 'Blacklist' ? 'badge-blacklist' : 'badge-whitelist'}`}>{item.type}</span></td>
+                <td>{item.otype_text || '—'}</td>
+                <td>Active</td>
+                <td style={{ position: 'relative' }} ref={menuIndex === idx ? menuRef : null}>
+                  <FiMoreVertical
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuIndex(prev => (prev === idx ? null : idx));
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  {menuIndex === idx && (
+                    <div
+                      className="dropdown-menu"
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        right: 0,
+                        background: '#fff',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        zIndex: 9999,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        minWidth: '120px',
+                      }}
+                    >
+                      <button onClick={() => handleEdit(item)}>Edit</button>
+                      <button onClick={() => handleDelete(item.type, item.id)} className="delete-btn">Delete</button>
+                    </div>
+                  )}
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>
@@ -201,39 +215,6 @@ function BlockAllowList() {
         />
       )}
     </main>
-  );
-}
-
-function BlockAllowRow({
-  id, email, domain, ip, network, regex, ldapgroup, ldapuser, descr,
-  type, otype_text, onDelete, onEdit, isDropdownOpen, toggleDropdown, rowIndex, onOutsideClickRef
-}) {
-  const badgeColors = {
-    Blacklist: 'badge-blacklist',
-    Whitelist: 'badge-whitelist',
-  };
-  const badgeClass = badgeColors[type] || 'badge-default';
-  const value = email || domain || ip || network || regex || ldapgroup || ldapuser || descr || '—';
-
-  return (
-    <tr>
-      <td>{value}</td>
-      <td><span className={`badge ${badgeClass}`}>{type}</span></td>
-      <td>{otype_text || '—'}</td>
-      <td>Active</td>
-      <td
-        style={{ position: 'relative', textAlign: 'center' }}
-        ref={el => onOutsideClickRef(rowIndex, el)}
-      >
-        <FiMoreVertical style={{ cursor: 'pointer' }} onClick={toggleDropdown} />
-        {isDropdownOpen && (
-          <div className="dropdown-menu" onMouseDown={(e) => e.stopPropagation()}>
-            <button onClick={onEdit}>Edit</button>
-            <button onClick={onDelete}>Delete</button>
-          </div>
-        )}
-      </td>
-    </tr>
   );
 }
 

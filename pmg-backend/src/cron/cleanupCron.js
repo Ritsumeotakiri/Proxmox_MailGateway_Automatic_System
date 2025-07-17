@@ -1,4 +1,3 @@
-// Backend - Updated Setup for Cleanup Cron
 import cron from 'node-cron';
 import QuarantineSettings from '../model/quarantineSetting.js';
 import { cleanupPmgQuarantineByAge } from '../controllers/pmgCleanupController.js';

@@ -2,13 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BsSearch } from 'react-icons/bs';
 import Swal from 'sweetalert2';
 import RuleCreator from '../../components/RuleCreator';
-import { fetchRules, deleteRule, createRule, updateRule } from '../../api/ruleService'; // ⬅️ added updateRule
-
-// ...styles import
+import { fetchRules, deleteRule, createRule, updateRule } from '../../api/ruleService';
 
 function Policy() {
   const [showModal, setShowModal] = useState(false);
-  const [editRule, setEditRule] = useState(null); // ⬅️ new state
+  const [editRule, setEditRule] = useState(null);
   const [selectedRule, setSelectedRule] = useState(null);
   const [policyData, setPolicyData] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
@@ -81,9 +79,9 @@ function Policy() {
   const handleCreateConfirm = async (payload) => {
     try {
       if (editRule) {
-        await updateRule(editRule.id, payload); // ⬅️ edit
+        await updateRule(editRule.id, payload);
       } else {
-        await createRule(payload); // ⬅️ create
+        await createRule(payload);
       }
 
       await loadRules();
@@ -183,20 +181,26 @@ function PolicyRow({ rule, onSelect, onDelete, onEdit }) {
   const menuRef = useRef();
 
   useEffect(() => {
-    const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
+
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    setMenuOpen((prev) => !prev);
+  };
 
   const action = rule.action?.map(a => a.name).join(', ') || '—';
   const conditionLabel = rule.what?.length ? 'What' : rule.from?.length ? 'Sender' : 'Custom';
-  const conditionText = rule.what?.map(w => w.name).join(', ')
-    || rule.from?.map(f => f.name).join(', ')
-    || '—';
+  const conditionText = rule.what?.map(w => w.name).join(', ') || rule.from?.map(f => f.name).join(', ') || '—';
 
   const colorMap = {
     'Block': 'badge-red',
@@ -217,21 +221,41 @@ function PolicyRow({ rule, onSelect, onDelete, onEdit }) {
       </td>
       <td onClick={() => onSelect(rule)}>{rule.priority}</td>
       <td onClick={() => onSelect(rule)}>{action}</td>
-      <td ref={menuRef} style={{ position: 'relative' }}>
-        <div onClick={() => setMenuOpen(!menuOpen)} style={{ cursor: 'pointer' }}>⋮</div>
+
+      <td style={{ position: 'relative' }} ref={menuRef}>
+        <div
+          onClick={handleMenuClick}
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+        >
+          ⋮
+        </div>
+
         {menuOpen && (
-          <div className="dropdown-menu">
-            <button onClick={() => { setMenuOpen(false); onEdit(rule); }}>
-              Edit
-            </button>
-            <button className="delete-btn" onClick={() => { setMenuOpen(false); onDelete(rule.id); }}>
-              Delete
-            </button>
+          <div
+            className="dropdown-menu"
+            style={{
+              position: 'absolute',
+              top: '100%',
+              right: 0,
+              background: '#fff',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              padding: '8px',
+              borderRadius: '4px',
+              zIndex: 9999,
+              minWidth: '120px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+            }}
+          >
+            <button onClick={() => { setMenuOpen(false); onEdit(rule); }}>Edit</button>
+            <button onClick={() => { setMenuOpen(false); onDelete(rule.id); }} className="delete-btn">Delete</button>
           </div>
         )}
       </td>
     </tr>
   );
 }
+
 
 export default Policy;

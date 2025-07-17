@@ -29,7 +29,7 @@ export async function cleanupPmgQuarantineByAge(days = 3) {
         deletedCount[type]++;
       }
 
-      console.log(`🧹 Deleted ${toDelete.length} messages from ${type}`);
+      // console.log(`🧹 Deleted ${toDelete.length} messages from ${type}`);
     } catch (err) {
       console.warn(`⚠️ Failed to clean ${type} quarantine:`, err.message);
     }

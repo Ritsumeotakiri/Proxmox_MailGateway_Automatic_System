@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import io from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 import '../../styles/card.css';
 import '../../styles/table.css';
@@ -21,22 +21,20 @@ import '../../styles/App.css';
 import {
   fetchAndPrepareTrackerData,
   fetchSpamScoreData,
-  ChartCount,
+  fetchMailLogChart, // ✅ new chart source
 } from '../../api/fetchTrackerData';
 import { formatTime, mapStatus } from '../../utils/formatUtils';
 import { Card } from './components/Card';
 import { TableRow } from './components/TableRow';
 
-const socket = io('http://localhost:3000');
+const socket = io();
 
 function Home() {
   const navigate = useNavigate();
-  const quarantinePath = () => navigate('/Quarantine');
-
   const [trackerData, setTrackerData] = useState([]);
   const [mailChartData, setMailChartData] = useState([]);
   const [spamDetected, setSpamDetected] = useState(0);
-  const [qurantineCount, setQurantineCount] = useState(0);
+  const [quarantineCount, setQuarantineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const trackingRef = useRef(null);
   const shownAlerts = useRef(new Set());
@@ -45,19 +43,19 @@ function Home() {
     trackingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const goToQuarantine = () => navigate('/Quarantine');
+
   const fetchAll = () => {
-    fetchAndPrepareTrackerData(setTrackerData, () => {}, setQurantineCount);
-    ChartCount(() => {}, setMailChartData, () => {});
-    fetchSpamScoreData(setSpamDetected, setMailChartData);
+    fetchAndPrepareTrackerData(setTrackerData, () => { }, setQuarantineCount); // ✅ cards
+    fetchMailLogChart(setMailChartData); // ✅ new chart
+    fetchSpamScoreData(setSpamDetected, setMailChartData); // ✅ still update chart for spam
   };
 
   useEffect(() => {
     fetchAll();
 
-    console.log('Setting up socket listeners');
-
-    socket.on('mailLog', (data) => {
-      console.log('mailLog event received:', data.message);
+    socket.on('mailLog', () => {
+      console.log('mailLog received');
       fetchAll();
     });
 
@@ -65,31 +63,23 @@ function Home() {
       const alertKey = `${data.message}-${new Date(data.time).getTime()}`;
       if (!shownAlerts.current.has(alertKey)) {
         shownAlerts.current.add(alertKey);
-
-        // Optional cleanup to limit memory usage
         if (shownAlerts.current.size > 50) {
           const first = shownAlerts.current.values().next().value;
           shownAlerts.current.delete(first);
         }
-
-        console.log('mailAlert event received:', data.message);
+        console.log('mailAlert received:', data.message);
         fetchAll();
-
-        // Optional: trigger a toast here
-        // toast.info(data.message);
-      } else {
-        console.log('Duplicate alert skipped:', data.message);
       }
     });
 
     return () => {
-      console.log('Cleaning up socket listeners');
       socket.off('mailLog');
       socket.off('mailAlert');
+      shownAlerts.current.clear();
     };
   }, []);
 
-  const filteredLogs = [...trackerData]
+  const filteredLogs = trackerData
     .filter((log) => {
       const term = searchTerm.toLowerCase();
       return (
@@ -121,13 +111,13 @@ function Home() {
           label="Spam Detected"
           value={spamDetected}
           growth="⬆ Live"
-          onClick={quarantinePath}
+          onClick={goToQuarantine}
         />
         <Card
           color="purple"
           icon={<BsPeopleFill />}
           label="Email Quarantined"
-          value={qurantineCount}
+          value={quarantineCount}
           growth="⬆ Live"
         />
       </div>
@@ -136,7 +126,7 @@ function Home() {
         <div className="chart-panel">
           <div className="chart-header">
             <h3>Email Threat Trend</h3>
-            <select className="dropdown-filter">
+            <select className="dropdown-filter" disabled>
               <option>This year</option>
               <option>Last 6 months</option>
               <option>Last 30 days</option>
@@ -150,12 +140,13 @@ function Home() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="sent" stackId="a" fill="#38bdf8" name="Sent Emails" />
-              <Bar dataKey="spam" stackId="a" fill="#f87171" name="Spam" />
-              <Bar dataKey="virus" stackId="a" fill="#a78bfa" name="Virus" />
-              <Bar dataKey="quarantine" stackId="a" fill="#fcd34d" name="Quarantine" />
+              <Bar dataKey="sent" stackId="stack" fill="#38bdf8" name="Sent Emails" />
+              <Bar dataKey="spam" stackId="stack" fill="#f87171" name="Spam" />
+              <Bar dataKey="virus" stackId="stack" fill="#a78bfa" name="Virus" />
+              <Bar dataKey="quarantine" stackId="stack" fill="#fcd34d" name="Quarantine" />
             </BarChart>
           </ResponsiveContainer>
+
         </div>
       </div>
 
