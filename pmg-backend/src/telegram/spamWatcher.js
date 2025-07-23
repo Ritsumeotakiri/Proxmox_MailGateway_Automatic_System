@@ -1,4 +1,3 @@
-// src/telegram/spamWatcher.js
 import { getPmgAxios } from '../pmg/pmgClient.js';
 import { notifyAdmin } from './pmgBot.js';
 

@@ -21,7 +21,7 @@ import '../../styles/App.css';
 import {
   fetchAndPrepareTrackerData,
   fetchSpamScoreData,
-  fetchMailLogChart, // ✅ new chart source
+  fetchMailLogChart, 
 } from '../../api/fetchTrackerData';
 import { formatTime, mapStatus } from '../../utils/formatUtils';
 import { Card } from './components/Card';
@@ -46,9 +46,9 @@ function Home() {
   const goToQuarantine = () => navigate('/Quarantine');
 
   const fetchAll = () => {
-    fetchAndPrepareTrackerData(setTrackerData, () => { }, setQuarantineCount); // ✅ cards
-    fetchMailLogChart(setMailChartData); // ✅ new chart
-    fetchSpamScoreData(setSpamDetected, setMailChartData); // ✅ still update chart for spam
+    fetchAndPrepareTrackerData(setTrackerData, () => { }, setQuarantineCount); 
+    fetchMailLogChart(setMailChartData); 
+    fetchSpamScoreData(setSpamDetected, setMailChartData); 
   };
 
   useEffect(() => {

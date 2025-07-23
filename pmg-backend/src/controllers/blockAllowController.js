@@ -1,91 +1,87 @@
 import { getPmgAxios } from '../pmg/pmgClient.js';
 
-export const listRuleGroups = async (req, res) => {
+const handleError = (res, message, error) => {
+  console.error(`${message}:`, error.response?.data || error.message);
+  res.status(error.response?.status || 500).json({
+    error: message,
+    details: error.response?.data || error.message,
+  });
+};
+
+const withPmgAxios = (handler) => async (req, res) => {
   try {
     const pmgAxios = await getPmgAxios();
-    const response = await pmgAxios.get('/config/ruledb/who');
-    res.status(200).json(response.data);
+    await handler(req, res, pmgAxios);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch rule groups' });
+    handleError(res, 'PMG API Error', error);
   }
 };
 
-export const getGroupEntries = async (req, res) => {
+// List rule groups
+export const listRuleGroups = withPmgAxios(async (req, res, pmgAxios) => {
+  const response = await pmgAxios.get('/config/ruledb/who');
+  res.status(200).json(response.data);
+});
+
+// Get group entries
+export const getGroupEntries = withPmgAxios(async (req, res, pmgAxios) => {
   const { groupid } = req.params;
-  try {
-    const pmgAxios = await getPmgAxios();
-    const response = await pmgAxios.get(`/config/ruledb/who/${groupid}/objects`);
-    res.status(200).json(response.data);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch group members' });
-  }
-};
+  const response = await pmgAxios.get(`/config/ruledb/who/${groupid}/objects`);
+  res.status(200).json(response.data);
+});
 
-export const deleteEntry = async (req, res) => {
+// Delete entry
+export const deleteEntry = withPmgAxios(async (req, res, pmgAxios) => {
   const { groupid, id } = req.params;
-  try {
-    const pmgAxios = await getPmgAxios();
-    await pmgAxios.delete(`/config/ruledb/who/${groupid}/objects/${id}`);
-    res.status(200).json({ message: 'Entry deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete entry' });
-  }
-};
+  await pmgAxios.delete(`/config/ruledb/who/${groupid}/objects/${id}`);
+  res.status(200).json({ message: 'Entry deleted successfully' });
+});
 
-export const getQuarantineBlacklist = async (req, res) => {
+// Quarantine blacklist
+export const getQuarantineBlacklist = withPmgAxios(async (req, res, pmgAxios) => {
   const pmail = req.query.pmail;
   if (!pmail) return res.status(400).json({ error: 'Missing query param: pmail' });
 
-  try {
-    const pmgAxios = await getPmgAxios();
-    const response = await pmgAxios.get('/quarantine/blacklist', { params: { pmail } });
-    res.status(200).json(response.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch quarantine blacklist' });
-  }
-};
+  const response = await pmgAxios.get('/quarantine/blacklist', { params: { pmail } });
+  res.status(200).json(response.data);
+});
 
-export const getQuarantineWhitelist = async (req, res) => {
+// Quarantine whitelist
+export const getQuarantineWhitelist = withPmgAxios(async (req, res, pmgAxios) => {
   const pmail = req.query.pmail;
   if (!pmail) return res.status(400).json({ error: 'Missing query param: pmail' });
 
-  try {
-    const pmgAxios = await getPmgAxios();
-    const response = await pmgAxios.get('/quarantine/whitelist', { params: { pmail } });
-    res.status(200).json(response.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch quarantine whitelist' });
-  }
-};
+  const response = await pmgAxios.get('/quarantine/whitelist', { params: { pmail } });
+  res.status(200).json(response.data);
+});
 
-export const listBlackWhite = async (req, res) => {
-  try {
-    const pmgAxios = await getPmgAxios();
-    const groupRes = await pmgAxios.get('/config/ruledb/who');
-    const groups = groupRes.data.data;
+// List blacklist and whitelist entries
+export const listBlackWhite = withPmgAxios(async (req, res, pmgAxios) => {
+  const groupRes = await pmgAxios.get('/config/ruledb/who');
+  const groups = groupRes.data.data;
 
-    const blacklist = groups.find(g => g.name.toLowerCase() === 'blacklist');
-    const whitelist = groups.find(g => g.name.toLowerCase() === 'whitelist');
+  const blacklist = groups.find(g => g.name.toLowerCase() === 'blacklist');
+  const whitelist = groups.find(g => g.name.toLowerCase() === 'whitelist');
 
-    if (!blacklist || !whitelist) return res.status(404).json({ error: 'Missing group' });
+  if (!blacklist || !whitelist)
+    return res.status(404).json({ error: 'Missing group' });
 
-    const [blacklistRes, whitelistRes] = await Promise.all([
-      pmgAxios.get(`/config/ruledb/who/${blacklist.id}/objects`),
-      pmgAxios.get(`/config/ruledb/who/${whitelist.id}/objects`)
-    ]);
+  const [blacklistRes, whitelistRes] = await Promise.all([
+    pmgAxios.get(`/config/ruledb/who/${blacklist.id}/objects`),
+    pmgAxios.get(`/config/ruledb/who/${whitelist.id}/objects`)
+  ]);
 
-    res.status(200).json({
-      blacklist: blacklistRes.data.data || [],
-      whitelist: whitelistRes.data.data || []
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch black/white list' });
-  }
-};
+  res.status(200).json({
+    blacklist: blacklistRes.data.data || [],
+    whitelist: whitelistRes.data.data || []
+  });
+});
 
-export const addEntry = async (req, res) => {
+// Add entry to blacklist/whitelist
+export const addEntry = withPmgAxios(async (req, res, pmgAxios) => {
   const { value, type, otype } = req.body;
-  if (!value || !type || !otype) return res.status(400).json({ error: 'Missing required fields' });
+  if (!value || !type || !otype)
+    return res.status(400).json({ error: 'Missing required fields' });
 
   const map = {
     email: 'email',
@@ -101,23 +97,20 @@ export const addEntry = async (req, res) => {
   if (!['blacklist', 'whitelist'].includes(type.toLowerCase()) || !path)
     return res.status(400).json({ error: 'Invalid type or otype' });
 
-  try {
-    const pmgAxios = await getPmgAxios();
-    const groups = (await pmgAxios.get('/config/ruledb/who')).data.data;
-    const group = groups.find(g => g.name.toLowerCase() === type.toLowerCase());
+  const groups = (await pmgAxios.get('/config/ruledb/who')).data.data;
+  const group = groups.find(g => g.name.toLowerCase() === type.toLowerCase());
 
-    if (!group) return res.status(404).json({ error: 'Group not found' });
+  if (!group)
+    return res.status(404).json({ error: 'Group not found' });
 
-    const payload = { [path]: value };
-    const response = await pmgAxios.post(`/config/ruledb/who/${group.id}/${path}`, payload);
+  const payload = { [path]: value };
+  const response = await pmgAxios.post(`/config/ruledb/who/${group.id}/${path}`, payload);
 
-    res.status(201).json({ message: 'Entry added', result: response.data });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to add entry' });
-  }
-};
+  res.status(201).json({ message: 'Entry added', result: response.data });
+});
 
-export const updateEntry = async (req, res) => {
+// Update entry
+export const updateEntry = withPmgAxios(async (req, res, pmgAxios) => {
   const { ogroup, id } = req.params;
   const { value, otype } = req.body;
 
@@ -131,16 +124,12 @@ export const updateEntry = async (req, res) => {
     ldapuser: 'ldapuser',
   }[otype?.toLowerCase()];
 
-  if (!path || !value) return res.status(400).json({ error: 'Invalid request body' });
+  if (!path || !value)
+    return res.status(400).json({ error: 'Invalid request body' });
 
-  try {
-    const pmgAxios = await getPmgAxios();
-    const url = `/config/ruledb/who/${ogroup}/${path}/${id}`;
-    const payload = { [path]: value };
-    const response = await pmgAxios.put(url, payload);
+  const url = `/config/ruledb/who/${ogroup}/${path}/${id}`;
+  const payload = { [path]: value };
+  const response = await pmgAxios.put(url, payload);
 
-    res.status(200).json({ message: 'Updated successfully', result: response.data });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update entry' });
-  }
-};
+  res.status(200).json({ message: 'Updated successfully', result: response.data });
+});

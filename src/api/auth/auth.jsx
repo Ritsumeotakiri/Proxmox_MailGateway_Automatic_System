@@ -1,4 +1,3 @@
-// src/api/auth.js
 const API_BASE = '/api';
 
 export async function registerUser(userData) {

@@ -1,21 +1,31 @@
 import { getPmgAxios } from '../pmg/pmgClient.js';
 
-// GET all rules
-export const getAllRules = async (req, res) => {
+const handleError = (res, message, err) => {
+  console.error(`[${message.toUpperCase()}]`, err?.response?.data || err.message);
+  res.status(err?.response?.status || 500).json({
+    error: message,
+    details: err?.response?.data || err.message,
+  });
+};
+
+// Wrapper to inject pmgAxios instance per request
+const withPmgAxios = (handler) => async (req, res) => {
   try {
     const pmg = await getPmgAxios();
-    const { data } = await pmg.get('/config/ruledb/rules');
-    res.json(data);
+    await handler(req, res, pmg);
   } catch (err) {
-    console.error('[GET RULES ERROR]', err?.response?.data || err.message);
-    res.status(500).json({
-      error: 'Failed to fetch rules',
-      details: err?.response?.data || err.message,
-    });
+    handleError(res, 'PMG connection failed', err);
   }
 };
+
+// GET all rules
+export const getAllRules = withPmgAxios(async (req, res, pmg) => {
+  const { data } = await pmg.get('/config/ruledb/rules');
+  res.json(data);
+});
+
 // CREATE a new rule and inject groups
-export const createRule = async (req, res) => {
+export const createRule = withPmgAxios(async (req, res, pmg) => {
   const {
     ruleName,
     priority = 90,
@@ -33,8 +43,6 @@ export const createRule = async (req, res) => {
   }
 
   try {
-    const pmg = await getPmgAxios();
-
     // Step 1: Create the base rule
     const ruleRes = await pmg.post('/config/ruledb/rules', {
       name: ruleName,
@@ -48,7 +56,7 @@ export const createRule = async (req, res) => {
       return res.status(500).json({ error: 'Rule created but no rule ID returned by PMG' });
     }
 
-    // Step 2: Attach groups if provided
+    // Step 2: Attach groups
     const attachGroup = async (type, groupId) => {
       try {
         await pmg.post(`/config/ruledb/rules/${ruleId}/${type}`, { ogroup: groupId });
@@ -61,34 +69,29 @@ export const createRule = async (req, res) => {
     if (Number.isInteger(fromGroupId)) await attachGroup('from', fromGroupId);
     if (Number.isInteger(toGroupId)) await attachGroup('to', toGroupId);
     if (Number.isInteger(whenGroupId)) await attachGroup('when', whenGroupId);
-    if (Number.isInteger(actionGroupOgroup)) await attachGroup('action', actionGroupOgroup);
+
+    if (Array.isArray(actionGroupOgroup)) {
+      for (const groupId of actionGroupOgroup) {
+        if (Number.isInteger(groupId)) {
+          await attachGroup('action', groupId);
+        }
+      }
+    } else if (Number.isInteger(actionGroupOgroup)) {
+      await attachGroup('action', actionGroupOgroup);
+    }
 
     res.status(201).json({
       message: 'Rule created successfully and groups injected',
       ruleId,
     });
   } catch (err) {
-    console.error('[CREATE RULE ERROR]', err?.response?.data || err.message);
-    res.status(500).json({
-      error: 'Failed to create rule',
-      details: err?.response?.data || err.message,
-    });
+    handleError(res, 'Failed to create rule', err);
   }
-};
+});
 
 // DELETE rule by ID
-export const deleteRule = async (req, res) => {
+export const deleteRule = withPmgAxios(async (req, res, pmg) => {
   const { id } = req.params;
-
-  try {
-    const pmg = await getPmgAxios();
-    await pmg.delete(`/config/ruledb/rules/${id}`);
-    res.json({ message: 'Rule deleted successfully' });
-  } catch (err) {
-    console.error('[DELETE RULE ERROR]', err?.response?.data || err.message);
-    res.status(500).json({
-      error: 'Failed to delete rule',
-      details: err?.response?.data || err.message,
-    });
-  }
-};
+  await pmg.delete(`/config/ruledb/rules/${id}`);
+  res.json({ message: 'Rule deleted successfully' });
+});

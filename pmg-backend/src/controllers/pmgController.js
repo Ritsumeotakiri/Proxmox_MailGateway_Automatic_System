@@ -9,99 +9,77 @@ const handleError = (res, message, error) => {
   });
 };
 
-// Tracker
-export const getTracker = async (req, res) => {
-  const node = req.query.node || 'pmg';
+// Wrapper to inject pmgAxios into all handlers
+const withPmgAxios = (handler) => async (req, res) => {
   try {
     const pmgAxios = await getPmgAxios();
-    const { data } = await pmgAxios.get(`/nodes/${node}/tracker`);
-    res.status(200).json(data);
+    await handler(req, res, pmgAxios);
   } catch (err) {
-    handleError(res, 'Failed to fetch tracker data from PMG', err);
+    handleError(res, 'PMG request failed', err);
   }
 };
+
+// Tracker
+export const getTracker = withPmgAxios(async (req, res, pmgAxios) => {
+  const node = req.query.node || 'pmg';
+  const { data } = await pmgAxios.get(`/nodes/${node}/tracker`);
+  res.status(200).json(data);
+});
 
 // Mail Count
-export const getMailCount = async (req, res) => {
-  try {
-    const pmgAxios = await getPmgAxios();
-    const { data } = await pmgAxios.get('/statistics/mailcount');
-    res.status(200).json(data);
-  } catch (err) {
-    handleError(res, 'Failed to fetch mailcount statistics', err);
-  }
-};
+export const getMailCount = withPmgAxios(async (req, res, pmgAxios) => {
+  const { data } = await pmgAxios.get('/statistics/mailcount');
+  res.status(200).json(data);
+});
 
-// Quarantine types: spam, virus, etc.
-export const getQuarantineByType = (type) => async (req, res) => {
-  try {
-    const pmgAxios = await getPmgAxios();
+// Quarantine by type (spam, virus, etc.)
+export const getQuarantineByType = (type) =>
+  withPmgAxios(async (req, res, pmgAxios) => {
     const { data } = await pmgAxios.get(`/quarantine/${type}`);
     res.status(200).json(data);
-  } catch (err) {
-    handleError(res, `Failed to fetch ${type} quarantine`, err);
-  }
-};
+  });
 
-// Merge quarantine
-export const getAllQuarantine = async (req, res) => {
-  try {
-    const pmgAxios = await getPmgAxios();
-    const types = ['spam', 'virus', 'blacklist', 'attachment'];
+// Merge all quarantine types
+export const getAllQuarantine = withPmgAxios(async (req, res, pmgAxios) => {
+  const types = ['spam', 'virus', 'blacklist', 'attachment'];
 
-    const allData = await Promise.all(types.map(async (type) => {
+  const allData = await Promise.all(
+    types.map(async (type) => {
       try {
         const { data } = await pmgAxios.get(`/quarantine/${type}`);
-        return data.data.map(item => ({ ...item, reason: type }));
+        return data.data.map((item) => ({ ...item, reason: type }));
       } catch (error) {
         console.warn(`Skipping /quarantine/${type}:`, error.message);
         return [];
       }
-    }));
+    })
+  );
 
-    res.status(200).json({ success: true, data: allData.flat() });
-  } catch (err) {
-    handleError(res, 'Failed to fetch merged quarantine data', err);
+  res.status(200).json({ success: true, data: allData.flat() });
+});
+
+// Quarantine action (deliver/delete/etc.)
+export const quarantineAction = withPmgAxios(async (req, res, pmgAxios) => {
+  const { action, id } = req.body;
+  if (!action || !id) {
+    return res.status(400).json({ error: 'Missing action or id' });
   }
-};
 
-// Quarantine Action
-export const quarantineAction = async (req, res) => {
-  try {
-    const { action, id } = req.body;
-    if (!action || !id) {
-      return res.status(400).json({ error: 'Missing action or id' });
-    }
+  const response = await pmgAxios.post('/quarantine/content', { action, id });
+  res.status(200).json({ message: `Mail ${action} executed`, result: response.data });
+});
 
-    const pmgAxios = await getPmgAxios();
-    const response = await pmgAxios.post('/quarantine/content', { action, id });
-
-    res.status(200).json({ message: `Mail ${action} executed`, result: response.data });
-  } catch (err) {
-    handleError(res, 'Quarantine action failed', err);
-  }
-};
-
-// Deliver/Delete specific mail
-export const quarantineActionById = (action) => async (req, res) => {
-  try {
+// Deliver/Delete mail by ID
+export const quarantineActionById = (action) =>
+  withPmgAxios(async (req, res, pmgAxios) => {
     const { id } = req.params;
-    const pmgAxios = await getPmgAxios();
     await pmgAxios.post('/quarantine/content', { action, id });
-
     res.status(200).json({ message: `Mail ${action}ed successfully.` });
-  } catch (err) {
-    handleError(res, `Failed to ${action} mail`, err);
-  }
-};
+  });
 
-// Stats: sender, receiver, spamscore
-export const getStatByType = (type) => async (req, res) => {
-  try {
-    const pmgAxios = await getPmgAxios();
+// Stats by type (sender, receiver, spamscore)
+export const getStatByType = (type) =>
+  withPmgAxios(async (req, res, pmgAxios) => {
     const { data } = await pmgAxios.get(`/statistics/${type}`);
     res.status(200).json(data);
-  } catch (err) {
-    handleError(res, `Failed to fetch ${type} statistics`, err);
-  }
-};
+  });

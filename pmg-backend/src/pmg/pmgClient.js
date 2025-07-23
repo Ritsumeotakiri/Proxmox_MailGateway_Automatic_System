@@ -10,7 +10,7 @@ async function refreshAuth() {
   authData = await loginToPMG();
   // If PMG returns expiry info, use that; otherwise, assume 30 mins validity
   tokenExpiry = Date.now() + 30 * 60 * 1000;
-  console.log('PMG API tokens refreshed');
+  // console.log('PMG API tokens refreshed');
 }
 
 export async function getPmgAxios() {
@@ -43,7 +43,7 @@ export async function getPmgAxios() {
           url.searchParams.append(key, val)
         );
       }
-      console.log('PMG Request URL:', url.toString());
+      // console.log('PMG Request URL:', url.toString());
     }
 
     return config;
